@@ -7,14 +7,14 @@
 [![CI](https://github.com/akram-jemal/silentdrop/actions/workflows/ci.yml/badge.svg)](https://github.com/akram-jemal/silentdrop/actions/workflows/ci.yml)
 [![MIT code license](https://img.shields.io/badge/code-MIT-green)](LICENSE)
 
-SilentDrop checks how a network reaches a curated set of websites. It records
-DNS, connection, TLS and HTTP outcomes so you can see where an HTTPS request
-stopped. Scan the whole list or a single category, then compare local reports
-from two networks.
+SilentDrop is a command-line tool for diagnosing website reachability. It shows
+how far each HTTPS probe got through DNS, connection, TLS and HTTP. Scan a
+curated list by category, save the results as JSON or CSV, and compare reports
+from different networks offline.
 
 ## Terminal demo
 
-Synthetic results for reserved `.example` hostnames, shown as an excerpt.
+Sample scan with synthetic results for reserved `.example` hostnames.
 
 ```text
 -----    SilentDrop  v1.0.0
@@ -40,40 +40,39 @@ accessibility.
 
 ## Install
 
-Python 3.10 or later is required. SilentDrop runs as a regular user.
+Requires Python 3.10 or later. You can clone the repository or extract the
+[source ZIP](https://github.com/akram-jemal/silentdrop/archive/refs/heads/main.zip).
+Run the installation commands from the folder containing `pyproject.toml`.
 
 ```sh
-git clone https://github.com/akram-jemal/silentdrop.git
-cd silentdrop
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install .
 ```
 
-In Windows PowerShell, activate the environment with `.\.venv\Scripts\Activate.ps1`.
-Use `python -m silentdrop` if you prefer the Python entry point.
+On Windows, use `py -m venv .venv` and activate it in PowerShell with
+`.\.venv\Scripts\Activate.ps1`. Both `silentdrop` and `python -m silentdrop`
+use the same CLI.
 
 ## Quick start
 
 ```sh
-silentdrop --help
-silentdrop --version
 silentdrop categories
-silentdrop dataset info
-silentdrop scan
+silentdrop scan --category gaming
 ```
 
-The default scan checks every bundled hostname and saves a timestamped JSON
-report in `reports/`. The category and dataset commands work offline.
+Run `silentdrop scan` to check every bundled hostname. Each scan saves a
+timestamped JSON report in `reports/` by default. `silentdrop categories` and
+`silentdrop dataset info` work offline.
 
 ```sh
-silentdrop scan --category gaming
 silentdrop scan --category social
 silentdrop scan --failed-only
 silentdrop scan --output reports/result.json
 silentdrop scan --format csv
 silentdrop scan --category education --concurrency 4 --timeout 5
 silentdrop --no-color scan --category gaming
+silentdrop scan --help
 ```
 
 - `--failed-only` filters the terminal results table. The summary and report
@@ -89,7 +88,8 @@ silentdrop --no-color scan --category gaming
 
 ## Compare reports
 
-Run the same category or dataset on each authorized network.
+Use the same dataset and category on each authorized network. Save the first
+report before switching networks, then save the second under a different name.
 
 ```sh
 silentdrop scan --output reports/home.json
@@ -97,9 +97,8 @@ silentdrop scan --output reports/lab.json
 silentdrop compare reports/home.json reports/lab.json
 ```
 
-Comparison runs offline. It matches hostnames, shows classification changes
-and identifies hosts present in only one report. You can mix JSON and CSV. Use
-the bundled synthetic examples to try the command without sending any probes.
+Comparison runs offline and accepts JSON or CSV. It matches hostnames and
+shows changes in classification or coverage. Try it with the bundled reports.
 
 ```sh
 silentdrop compare examples/synthetic-home.json examples/synthetic-lab.json
@@ -128,10 +127,10 @@ category counts on each row. This result is from the synthetic lab report.
 ## How it works
 
 SilentDrop uses the OS resolver, verifies TLS certificates, and sends a direct
-`HEAD /` request over HTTPS to each selected hostname. It measures through
-the first response headers. Redirect destinations, page bodies, and embedded
-resources are outside the scope of the probe. A rate-limit status is recorded
-as received.
+`HEAD /` request over HTTPS to each selected hostname. The probe ends at the
+first response headers. Its result applies to that hostname at the time of
+the scan. Redirect destinations, page content and mobile apps are outside
+the scope of the probe.
 
 `dataset.py` loads and filters packaged hostnames. `scanner.py` runs bounded
 workers through a shared aiohttp session. `classifier.py` interprets the
@@ -150,8 +149,21 @@ handle arguments and terminal output.
 | `SUSPECTED_FILTERING` | HTTP 451 explicitly reported a legal restriction. Its source is unverified. |
 | `INCONCLUSIVE` | HTTP 429, an unexpected status, a server error or an ambiguous transport error. |
 
-The summary groups results into accessible, failed and inconclusive requests.
-An HTTP restriction counts as failed. Suspected filtering counts as inconclusive.
+A restricted HTTP response counts as a failed probe. Suspected filtering counts
+as inconclusive.
+
+## Troubleshooting
+
+**A site opens in the browser but returns HTTP 403.** The HTTPS connection
+worked and the endpoint denied the probe. Browsers send a different request
+and may already have a signed-in session. A 403 alone cannot identify a
+network block.
+
+**Several sites fail certificate verification.** Check the certificate store
+for the Python installation running SilentDrop. If you installed Python from
+python.org on macOS, run `Install Certificates.command` from its folder in
+Applications. On a managed network, ask IT which certificate authority Python
+should trust.
 
 ## Dataset and license
 
@@ -168,16 +180,10 @@ International. [Dataset license terms](https://creativecommons.org/licenses/by-n
 
 ## Limitations and responsible use
 
-Use SilentDrop only on networks and endpoints you are authorized to test and
-where direct HTTPS diagnostics are permitted. The scan records observations
-for the requesting machine at a specific time. A 403 can come from a site or
-CDN policy. DNS errors, timeouts and TLS errors can also result from resolver
-configuration, outages or certificate problems. A 2xx or 3xx result covers
-the responding HTTPS endpoint. Mobile apps may use other hosts and protocols.
-
-The shortlist covers mainstream service endpoints. The content hosted by a
-service can change. Reports stay local and contain hostnames and observations
-required for analysis, without IP addresses, request credentials or cookies.
+Use SilentDrop where you are authorized to send direct HTTPS probes. DNS
+errors, timeouts and TLS errors can have several causes, including resolver
+configuration, outages and certificate problems. Reports stay local and
+include the tested hostnames, timestamps and probe outcomes.
 
 ## Contributing
 
@@ -194,7 +200,3 @@ python -m build
 
 For dataset changes, include the hostname, reason for inclusion and its
 source in the proposed diff. [Open an issue](https://github.com/akram-jemal/silentdrop/issues)
-
-## Author
-
-[Akram Jemal on GitHub](https://github.com/akram-jemal)
