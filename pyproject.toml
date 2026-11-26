@@ -8,8 +8,8 @@ dynamic = ["version"]
 description = "Asynchronous HTTPS connectivity diagnostics for a curated set of websites"
 readme = "README.md"
 requires-python = ">=3.10"
-license = "MIT"
-license-files = ["LICENSE"]
+license = "MIT AND CC-BY-NC-SA-4.0"
+license-files = ["LICENSE", "silentdrop/data/ATTRIBUTION.md"]
 dependencies = [
     "aiohttp>=3.12.15,<4",
     "rich>=13.9,<16",
@@ -37,6 +37,9 @@ version = {attr = "silentdrop.__version__"}
 [tool.setuptools.packages.find]
 include = ["silentdrop"]
 namespaces = false
+
+[tool.setuptools.package-data]
+silentdrop = ["data/*.csv", "data/*.md"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "strict"
