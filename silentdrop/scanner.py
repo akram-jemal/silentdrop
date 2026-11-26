@@ -1,5 +1,7 @@
 """Run bounded HTTPS HEAD probes against the reviewed dataset."""
 
+from __future__ import annotations
+
 import asyncio
 import errno
 import ssl
@@ -7,12 +9,14 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from time import perf_counter
 from types import SimpleNamespace
-
-import aiohttp
+from typing import TYPE_CHECKING
 
 from .classifier import Failure, classify
 from .dataset import Domain
 from .models import Outcome, ProbeResult, utc_timestamp
+
+if TYPE_CHECKING:
+    import aiohttp
 
 DEFAULT_CONCURRENCY = 8
 MAX_CONCURRENCY = 32
@@ -29,6 +33,8 @@ class _Stages:
 
 
 def _trace_config() -> aiohttp.TraceConfig:
+    import aiohttp
+
     trace = aiohttp.TraceConfig()
 
     async def dns_resolved(
@@ -54,6 +60,8 @@ def _trace_config() -> aiohttp.TraceConfig:
 
 
 def _observe_failure(exc: Exception, stages: _Stages) -> Failure:
+    import aiohttp
+
     if isinstance(exc, (asyncio.TimeoutError, TimeoutError)):
         return Failure.TIMEOUT
     if isinstance(exc, aiohttp.ClientConnectorDNSError):
@@ -82,6 +90,8 @@ def _probe_url(entry: Domain) -> str:
 
 
 async def _probe(session: aiohttp.ClientSession, entry: Domain) -> ProbeResult:
+    import aiohttp
+
     started_at = utc_timestamp()
     started = perf_counter()
     stages = _Stages()
@@ -118,6 +128,9 @@ async def scan(
     on_result: Callable[[ProbeResult], None] | None = None,
 ) -> tuple[ProbeResult, ...]:
     """Test reviewed hosts and return observations in dataset order."""
+    # aiohttp initializes TLS contexts at import time. Load it when probing begins.
+    import aiohttp
+
     if not 1 <= concurrency <= MAX_CONCURRENCY:
         raise ValueError(f"concurrency must be between 1 and {MAX_CONCURRENCY}")
     if not MIN_TIMEOUT <= timeout <= MAX_TIMEOUT:

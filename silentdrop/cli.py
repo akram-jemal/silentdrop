@@ -12,6 +12,7 @@ from rich.console import Console
 from . import __version__
 from .comparison import compare, load_report
 from .dataset import CATEGORIES, DATASET_VERSION, filter_category, load_dataset
+from .doctor import PROBE_HOST, run_doctor
 from .models import utc_timestamp
 from .reporter import REPORT_FORMATS, ScanReport, report_format, save_report
 from .scanner import (
@@ -76,6 +77,14 @@ def build_parser() -> argparse.ArgumentParser:
     dataset_info = dataset_commands.add_parser("info", help="show dataset version and sources")
     dataset_info.set_defaults(handler=_show_dataset)
 
+    doctor = commands.add_parser("doctor", help="check local Python TLS and proxy settings")
+    doctor.add_argument(
+        "--probe",
+        action="store_true",
+        help=f"also send one verified HTTPS probe to {PROBE_HOST}",
+    )
+    doctor.set_defaults(handler=_run_doctor)
+
     comparison = commands.add_parser("compare", help="compare two saved JSON or CSV reports")
     comparison.add_argument("before", type=Path, help="baseline report")
     comparison.add_argument("after", type=Path, help="report to compare with the baseline")
@@ -129,6 +138,10 @@ def _show_dataset(args: argparse.Namespace, console: Console) -> None:
     print_dataset_info(console, load_dataset())
 
 
+def _run_doctor(args: argparse.Namespace, console: Console) -> int:
+    return run_doctor(console, probe=args.probe)
+
+
 def _compare_reports(args: argparse.Namespace, console: Console) -> None:
     before = load_report(args.before)
     after = load_report(args.after)
@@ -154,11 +167,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.command == "scan":
             _validate_scan_options(args, parser)
-        args.handler(args, console)
+        return args.handler(args, console) or 0
     except KeyboardInterrupt:
         errors.print("Interrupted.", style="yellow")
         return 130
     except (OSError, ValueError, csv.Error) as exc:
         errors.print(str(exc), style="red", markup=False)
         return 1
-    return 0
