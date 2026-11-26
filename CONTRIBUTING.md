@@ -21,6 +21,7 @@ and 3.12. [CI workflow](.github/workflows/ci.yml)
 | File | Responsibility |
 | --- | --- |
 | `silentdrop/cli.py` | Parse commands and options, run scans and save reports. |
+| `silentdrop/doctor.py` | Inspect local runtime and trust configuration and run the opt-in connection check. |
 | `silentdrop/dataset.py` and `silentdrop/data/` | Load and validate the packaged hostname list and its metadata. |
 | `silentdrop/scanner.py` | Schedule bounded HTTPS probes and record observed connection stages. |
 | `silentdrop/classifier.py` | Translate probe outcomes into classifications. |
@@ -40,3 +41,11 @@ results clearly. [Dataset maintenance](silentdrop/data/ATTRIBUTION.md)
 Include the command, application version, dataset version and relevant result
 when reporting a bug. Remove private paths and shell prompts before attaching
 screenshots or logs. [Issues](https://github.com/akram-jemal/silentdrop/issues)
+
+## Releases
+
+For a release, update `silentdrop/__init__.py` and add a matching version
+heading to `CHANGELOG.md`. A pushed version tag triggers CI. After the checks
+pass, the workflow uses that changelog section as release notes and publishes
+the release with a wheel and source distribution.
+[Release workflow](.github/workflows/ci.yml)

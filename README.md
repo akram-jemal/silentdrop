@@ -15,7 +15,7 @@ verify that an endpoint responded, or compare observations across networks.
 ## Quick start
 
 Use Python 3.10 or later. Clone the repository or extract the source ZIP, then
-open a terminal in the folder containing `pyproject.toml`. [Download the current source](https://github.com/akram-jemal/silentdrop/archive/refs/heads/main.zip)
+open a terminal in the folder containing `pyproject.toml`. [Download the v1.1.0 source](https://github.com/akram-jemal/silentdrop/archive/refs/tags/v1.1.0.zip)
 
 ```sh
 python3 -m venv .venv
@@ -34,7 +34,7 @@ HTTPS probes.
 
 ## Terminal demo
 
-A messaging scan on macOS. Thirteen of the fourteen hosts answered the probe,
+A messaging scan from v1.0.0 on macOS. Thirteen of the fourteen hosts answered the probe,
 and one timed out.
 
 ![SilentDrop terminal showing a completed messaging scan with 13 accessible hosts and 1 timeout](assets/terminal-demo.webp)
@@ -64,6 +64,8 @@ zoom.us                    Accessible              301     71 ms
 
 | Task | Command |
 | --- | --- |
+| Inspect Python's TLS trust and detected proxy settings offline | `silentdrop doctor` |
+| Check direct HTTPS connectivity to one bundled hostname | `silentdrop doctor --probe` |
 | List category names and host counts | `silentdrop categories` |
 | Show the bundled dataset version and source | `silentdrop dataset info` |
 | Scan every bundled hostname | `silentdrop scan` |
@@ -79,7 +81,7 @@ scope of the probe.
 
 ## Documentation
 
-- Scan options, exit codes, result interpretation and troubleshooting. [Operating guide](docs/usage.md)
+- Scan options, setup diagnostics, exit codes and troubleshooting. [Operating guide](docs/usage.md)
 - JSON and CSV fields, comparison behavior and example reports. [Report reference](docs/reports.md)
 - Development setup, code layout and validation checks. [Contributing](CONTRIBUTING.md)
 - Dataset provenance, licensing and update procedure. [Dataset attribution](silentdrop/data/ATTRIBUTION.md)

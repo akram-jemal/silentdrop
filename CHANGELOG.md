@@ -1,10 +1,13 @@
 # Changelog
 
-## Unreleased
+## 1.1.0
 
+- Add `silentdrop doctor` to inspect local Python, TLS trust and proxy settings offline.
+- Add `silentdrop doctor --probe` to verify direct HTTPS connectivity to one bundled hostname.
 - Add the SilentDrop wordmark and a terminal layout that adapts to narrow windows.
 - Explain repeated certificate verification failures and HTTP probe denials in scan output.
-- Add operating, report format and contribution guides.
+- Add operating, report format and contribution guides, along with a real macOS terminal demo.
+- Publish release notes, wheels and source distributions through GitHub Releases.
 
 ## 1.0.0
 

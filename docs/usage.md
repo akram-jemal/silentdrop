@@ -13,11 +13,40 @@ Install SilentDrop and run a first scan from the [quick start](../README.md#quic
 | Command | Behavior |
 | --- | --- |
 | `silentdrop scan` | Probes all bundled hosts and saves one local report. |
+| `silentdrop doctor` | Checks the local Python runtime, TLS trust and detected proxy configuration offline. |
 | `silentdrop categories` | Lists category names and host counts offline. |
 | `silentdrop dataset info` | Displays the dataset version, source and license offline. |
 | `silentdrop compare BEFORE AFTER` | Compares two saved JSON or CSV reports offline. |
 | `silentdrop --version` | Prints the application version. |
 | `silentdrop --help` | Lists commands and global options. |
+
+## Check your setup
+
+```sh
+silentdrop doctor
+```
+
+Run this before scanning when you suspect a Python certificate or proxy
+configuration issue. Doctor checks the Python runtime, OpenSSL backend,
+and whether Python can load certificate authorities (CAs). It checks for
+`SSL_CERT_FILE` and `SSL_CERT_DIR` overrides and reports whether Python detects
+HTTP proxy settings from the environment or operating system. The checks run
+offline, keep environment variable values private, and leave your
+configuration untouched.
+
+Use `--probe` to send one direct HTTPS `HEAD /` request to `www.iana.org`,
+a hostname in the bundled dataset. The probe uses the same TLS checks as
+a scan, has an 8-second timeout, and leaves redirect destinations outside
+the test. Results appear in the terminal. Use it on a network where direct
+HTTPS diagnostics are permitted.
+
+```sh
+silentdrop doctor --probe
+```
+
+A verified HTTPS response, including HTTP 403 or 503, confirms that DNS,
+connection and TLS succeeded for that probe. The status code describes how
+the endpoint answered it.
 
 ## Scan options
 
@@ -61,16 +90,17 @@ answered over HTTPS and denied the HEAD request. A browser can make a different
 request and may already have a signed-in session. Use the HTTP status and the
 report's diagnostic to describe the outcome.
 
-**Certificate verification fails across several unrelated sites.** Check the
-trust configuration for the Python installation running SilentDrop. With
-python.org builds on macOS, run `Install Certificates.command` from the
-corresponding Python folder in Applications. On a managed network, ask IT which
-CA that Python installation should trust.
+**Certificate verification fails across several unrelated sites.** Run
+`silentdrop doctor` to inspect the TLS trust configuration for the Python
+installation running SilentDrop. With python.org builds on macOS, run
+`Install Certificates.command` from the corresponding Python folder in
+Applications. On a managed network, ask IT which CA that Python installation
+should trust.
 
-**The browser works through an organization proxy.** SilentDrop uses direct
-connections. Browser proxy settings and HTTP proxy environment variables are
-outside its connection configuration. Use it where direct HTTPS diagnostics
-are permitted.
+**The browser works through an organization proxy.** Run `silentdrop doctor`
+to see whether Python detects a proxy. SilentDrop uses direct connections.
+Browser proxy settings and HTTP proxy environment variables are outside its
+connection configuration. Use it where direct HTTPS diagnostics are permitted.
 
 **A probe keeps timing out.** Open the report and check the DNS, connection and
 TLS fields before considering the HTTP stage. For repeat measurements, use the
@@ -87,9 +117,12 @@ with a supported schema version. [Report reference](reports.md)
 | Code | Meaning |
 | --- | --- |
 | `0` | The command completed. A completed scan may contain failed probes. |
-| `1` | A file, dataset, or other handled command error occurred. |
+| `1` | A file, dataset, or other handled command error occurred. Doctor uses this code when Python can't initialize usable TLS trust or when the optional probe doesn't receive a verified HTTPS response. |
 | `2` | Command-line arguments were invalid. |
 | `130` | The command was interrupted. |
 
 For scripts, use the exit code to check command completion and use
 `summary` or `results` in the saved JSON to evaluate probe outcomes.
+For the offline doctor check, exit code `0` means Python initialized TLS with
+loaded CAs or a candidate CA directory. Use `--probe` to verify a live HTTPS
+response with that configuration.
