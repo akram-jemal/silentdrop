@@ -221,6 +221,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
 # Local SilentDrop scan reports
 reports/
 *.silentdrop.json
