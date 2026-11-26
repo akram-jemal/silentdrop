@@ -34,6 +34,7 @@ def test_normalize_domain(value, expected):
         "local",
         "127.0.0.1",
         "http://[::1]/",
+        "http://[v1.example]/",
         "a\t.example",
         "-invalid.example",
     ],

@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "application_version": "1.0.0",
+  "dataset_version": "synthetic-1",
+  "scan_timestamp": "2026-11-26T12:30:00.000000Z",
+  "summary": {
+    "total": 3,
+    "accessible": 1,
+    "failed": 1,
+    "inconclusive": 1
+  },
+  "categories": {
+    "gaming": {
+      "total": 3,
+      "accessible": 1,
+      "failed": 1,
+      "inconclusive": 1
+    }
+  },
+  "limitations": [
+    "Each result describes an HTTPS HEAD request to a website at the time of the scan.",
+    "The scan cannot establish firewall rules or mobile app accessibility.",
+    "Redirect destinations and page content are outside the scope of the check."
+  ],
+  "results": [
+    {
+      "domain": "arena.example",
+      "category": "gaming",
+      "dns": "ok",
+      "connection": "ok",
+      "tls": "ok",
+      "http_status": 200,
+      "latency_ms": 47.52,
+      "error": null,
+      "timestamp": "2026-11-26T12:30:00.000000Z",
+      "classification": "ACCESSIBLE"
+    },
+    {
+      "domain": "matches.example",
+      "category": "gaming",
+      "dns": "ok",
+      "connection": "unknown",
+      "tls": "unknown",
+      "http_status": null,
+      "latency_ms": 8002.12,
+      "error": "The request timed out before receiving HTTP headers.",
+      "timestamp": "2026-11-26T12:30:00.000000Z",
+      "classification": "CONNECTION_TIMEOUT"
+    },
+    {
+      "domain": "scores.example",
+      "category": "gaming",
+      "dns": "ok",
+      "connection": "ok",
+      "tls": "ok",
+      "http_status": 429,
+      "latency_ms": 81.02,
+      "error": "The endpoint reported rate limiting (HTTP 429).",
+      "timestamp": "2026-11-26T12:30:00.000000Z",
+      "classification": "INCONCLUSIVE"
+    }
+  ]
+}

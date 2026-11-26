@@ -46,7 +46,11 @@ def normalize_domain(value: str) -> str:
         value = f"https://{value}"
 
     parsed = urlsplit(value)
-    if parsed.scheme not in {"http", "https"} or parsed.hostname is None:
+    if (
+        parsed.scheme not in {"http", "https"}
+        or parsed.hostname is None
+        or parsed.netloc.startswith("[")
+    ):
         raise ValueError("expected a hostname or HTTP(S) URL")
     if parsed.username is not None or parsed.password is not None:
         raise ValueError("credentials are not allowed in dataset URLs")

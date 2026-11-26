@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "application_version": "1.0.0",
+  "dataset_version": "synthetic-1",
+  "scan_timestamp": "2026-11-26T12:00:00.000000Z",
+  "summary": {
+    "total": 3,
+    "accessible": 3,
+    "failed": 0,
+    "inconclusive": 0
+  },
+  "categories": {
+    "gaming": {
+      "total": 3,
+      "accessible": 3,
+      "failed": 0,
+      "inconclusive": 0
+    }
+  },
+  "limitations": [
+    "Each result describes an HTTPS HEAD request to a website at the time of the scan.",
+    "The scan cannot establish firewall rules or mobile app accessibility.",
+    "Redirect destinations and page content are outside the scope of the check."
+  ],
+  "results": [
+    {
+      "domain": "arena.example",
+      "category": "gaming",
+      "dns": "ok",
+      "connection": "ok",
+      "tls": "ok",
+      "http_status": 200,
+      "latency_ms": 47.52,
+      "error": null,
+      "timestamp": "2026-11-26T12:00:00.000000Z",
+      "classification": "ACCESSIBLE"
+    },
+    {
+      "domain": "matches.example",
+      "category": "gaming",
+      "dns": "ok",
+      "connection": "ok",
+      "tls": "ok",
+      "http_status": 200,
+      "latency_ms": 55.9,
+      "error": null,
+      "timestamp": "2026-11-26T12:00:00.000000Z",
+      "classification": "ACCESSIBLE"
+    },
+    {
+      "domain": "scores.example",
+      "category": "gaming",
+      "dns": "ok",
+      "connection": "ok",
+      "tls": "ok",
+      "http_status": 200,
+      "latency_ms": 81.02,
+      "error": null,
+      "timestamp": "2026-11-26T12:00:00.000000Z",
+      "classification": "ACCESSIBLE"
+    }
+  ]
+}

@@ -224,5 +224,8 @@ __marimo__/
 
 # Local SilentDrop scan reports
 reports/
-*.silentdrop.json
-*.silentdrop.csv
+*.[jJ][sS][oO][nN]
+*.[cC][sS][vV]
+!/silentdrop/data/domains.csv
+!/examples/synthetic-*.json
+!/examples/synthetic-*.csv
