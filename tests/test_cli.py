@@ -1,11 +1,17 @@
 import asyncio
+import io
 import json
+from pathlib import Path
 
 import pytest
 from aiohttp import web
+from rich.console import Console
 
 from silentdrop import __version__, cli
 from silentdrop.dataset import DATASET_VERSION, Domain
+from silentdrop.models import Classification, Outcome, ProbeResult
+from silentdrop.reporter import ScanReport
+from silentdrop.ui import print_scan_results
 
 
 @pytest.mark.parametrize(
@@ -79,7 +85,7 @@ async def test_scan_and_compare_reports_via_cli_with_loopback_https(
     args = ["--no-color", "scan", "--category", "gaming", "--failed-only"]
     assert await asyncio.to_thread(cli.main, [*args, "--output", str(before)]) == 0
     output = capsys.readouterr().out
-    assert f"SilentDrop v{__version__}" in output
+    assert f"SilentDrop  v{__version__}" in output
     assert "No failed results" in output
     document = json.loads(before.read_text(encoding="utf-8"))
     assert document["summary"]["total"] == document["summary"]["accessible"] == 1
@@ -87,7 +93,8 @@ async def test_scan_and_compare_reports_via_cli_with_loopback_https(
 
     assert await asyncio.to_thread(cli.main, [*args, "--format", "csv"]) == 0
     output = capsys.readouterr().out
-    assert "HTTP_RESTRICTED" in output
+    assert "HTTP restricted" in output
+    assert "denied request or an authentication requirement" in output
     (after,) = (tmp_path / "reports").glob("silentdrop-*.csv")
 
     assert cli.main(["compare", str(before), str(after)]) == 0
@@ -106,3 +113,28 @@ def test_interrupted_scan_returns_130_and_leaves_no_report(monkeypatch, capsys, 
     assert cli.main(["scan", "--output", str(destination)]) == 130
     assert "Interrupted." in capsys.readouterr().err
     assert not destination.exists()
+
+
+def test_narrow_scan_results_keep_label_and_http_details_readable():
+    result = ProbeResult(
+        domain="service.example",
+        category="social",
+        dns=Outcome.OK,
+        connection=Outcome.OK,
+        tls=Outcome.OK,
+        http_status=403,
+        latency_ms=199,
+        error=None,
+        timestamp="2026-11-26T12:00:00Z",
+        classification=Classification.HTTP_RESTRICTED,
+    )
+    output = io.StringIO()
+    console = Console(file=output, width=42, color_system=None)
+    report = ScanReport(DATASET_VERSION, result.timestamp, (result,))
+    print_scan_results(console, report, Path("reports/sample.json"), 0.2, failed_only=False)
+    rendered = output.getvalue()
+    assert "service.example" in rendered
+    assert "HTTP restricted" in rendered
+    assert "HTTP 403 / 199 ms" in rendered
+    assert "\x1b" not in rendered
+    assert max(map(len, rendered.splitlines())) <= 42

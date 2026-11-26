@@ -1,5 +1,7 @@
 # SilentDrop
 
+![SilentDrop wordmark with a mint descending signal](assets/silentdrop-logo.webp)
+
 *Not every connection dies loudly.*
 
 [![CI](https://github.com/akram-jemal/silentdrop/actions/workflows/ci.yml/badge.svg)](https://github.com/akram-jemal/silentdrop/actions/workflows/ci.yml)
@@ -15,25 +17,25 @@ from two networks.
 Synthetic results for reserved `.example` hostnames, shown as an excerpt.
 
 ```text
-+-------------------+
-|    SILENTDROP     |
-+-------------------+
-SilentDrop v1.0.0
-Not every connection dies loudly.
-Dataset synthetic-1 | Hosts 3 | Gaming
+-----    SilentDrop  v1.0.0
+----     Not every connection dies loudly.
+--       Gaming  /  3 hosts
+.        Dataset 2026-11-26.1
 
-| Domain          | Category | Classification     | HTTP | Latency |
-|-----------------+----------+--------------------+------+---------|
-| arena.example   | gaming   | ACCESSIBLE         |  200 |   48 ms |
-| matches.example | gaming   | CONNECTION_TIMEOUT |    - | 8002 ms |
-| scores.example  | gaming   | INCONCLUSIVE       |  429 |   81 ms |
+Scan complete  3 tested / 8.0 s
+1 accessible   1 failed   1 inconclusive
+Report  reports/lab.json
 
-| Category | Tested | Accessible | Failed | Inconclusive |
-|----------+--------+------------+--------+--------------|
-| gaming   |      3 |          1 |      1 |            1 |
+Domain results
 
-Checks completed 3 | Elapsed 8.0 s
-Report reports/lab.json
+  Domain                     Result                 HTTP   Latency
+ ──────────────────────────────────────────────────────────────────
+  arena.example              Accessible              200     48 ms
+  matches.example            Connection timeout        -   8002 ms
+  scores.example             Inconclusive            429     81 ms
+
+The scan cannot establish firewall rules or mobile app
+accessibility.
 ```
 
 ## Install

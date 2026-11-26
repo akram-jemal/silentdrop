@@ -18,37 +18,63 @@ from .dataset import CATEGORIES, DATASET_LICENSE, DATASET_VERSION, Domain
 from .models import Classification, ProbeResult
 from .reporter import LIMITATIONS, ScanReport
 
+_ACCENT = "cyan"
 _GROUP_STYLES = {"accessible": "green", "failed": "red", "inconclusive": "yellow"}
 
 
 def _result_label(classification: Classification | None) -> Text:
     if classification is None:
         return Text("Absent", style="dim")
-    return Text(classification.value, style=_GROUP_STYLES[summary_group(classification)])
+    color = _GROUP_STYLES[summary_group(classification)]
+    if classification is Classification.HTTP_RESTRICTED:
+        color = "yellow"
+    return Text(classification.value.replace("_", " ").capitalize(), style=color)
+
+
+def _table(*, expand: bool = False) -> Table:
+    return Table(
+        box=box.SIMPLE,
+        border_style="dim",
+        header_style="bold",
+        padding=(0, 1),
+        expand=expand,
+    )
 
 
 def print_scan_start(console: Console, total: int, category: str | None) -> None:
-    banner = "+-------------------+\n|    SILENTDROP     |\n+-------------------+"
-    console.print(Text(banner, style="bold green"))
-    console.print(f"SilentDrop v{__version__}", style="bold")
-    console.print("Not every connection dies loudly.")
-    scope = CATEGORIES[category] if category else "all categories"
-    console.print(f"Dataset {DATASET_VERSION} | Hosts {total} | {scope}\n", style="dim")
+    scope = CATEGORIES[category] if category else "All categories"
+    mark = ("-----", "----", "--", ".")
+    identity = (
+        Text.assemble(("SilentDrop", "bold"), (f"  v{__version__}", "dim")),
+        Text("Not every connection dies loudly."),
+        Text(f"{scope}  /  {total} hosts", style="dim"),
+        Text(f"Dataset {DATASET_VERSION}", style="dim"),
+    )
+    console.print()
+    for stroke, line in zip(mark, identity, strict=True):
+        console.print(Text.assemble((f"{stroke:<7}  ", f"bold {_ACCENT}"), line))
+    console.print()
 
 
 @contextmanager
 def scan_progress(console: Console, total: int) -> Iterator[Callable[[ProbeResult], None]]:
     """Track completed probes during an interactive scan."""
-    with Progress(
-        TextColumn("[green]HTTPS[/]"),
-        BarColumn(bar_width=None, complete_style="green", finished_style="green"),
+    columns = [
+        TextColumn(f"[bold {_ACCENT}]HTTPS[/]"),
+        BarColumn(bar_width=None, complete_style=_ACCENT, finished_style=_ACCENT),
         MofNCompleteColumn(),
         TimeElapsedColumn(),
-        TextColumn(
-            "[green]{task.fields[accessible]} accessible[/]  "
-            "[red]{task.fields[failed]} failed[/]  "
-            "[yellow]{task.fields[inconclusive]} inconclusive[/]"
-        ),
+    ]
+    if console.width >= 76:
+        columns.append(
+            TextColumn(
+                "[green]{task.fields[accessible]} accessible[/]  "
+                "[red]{task.fields[failed]} failed[/]  "
+                "[yellow]{task.fields[inconclusive]} inconclusive[/]"
+            )
+        )
+    with Progress(
+        *columns,
         console=console,
         disable=not console.is_terminal,
         transient=True,
@@ -67,61 +93,94 @@ def scan_progress(console: Console, total: int) -> Iterator[Callable[[ProbeResul
 def print_scan_results(
     console: Console, report: ScanReport, path: Path, elapsed: float, *, failed_only: bool
 ) -> None:
-    title = "Failed results" if failed_only else "Domain results"
-    table = Table(title=title, box=box.ASCII)
-    table.add_column("Domain", overflow="fold")
-    table.add_column("Category", overflow="fold")
-    table.add_column("Classification", overflow="fold")
-    table.add_column("HTTP", justify="right")
-    table.add_column("Latency", justify="right")
+    totals = report.summary
+    console.print(
+        Text.assemble(
+            ("Scan complete", "bold"), (f"  {totals.total} tested / {elapsed:.1f} s", "dim")
+        )
+    )
+    console.print(
+        Text.assemble(
+            (f"{totals.accessible} accessible", "green"),
+            "   ",
+            (f"{totals.failed} failed", "red"),
+            "   ",
+            (f"{totals.inconclusive} inconclusive", "yellow"),
+        )
+    )
+    console.print(Text.assemble(("Report  ", "dim"), str(path), overflow="fold"))
+    console.print()
+
+    categories = report.categories
+    width = console.width
+    compact = width < 56
+    show_category = len(categories) > 1 and width >= 72
+    table = _table(expand=True)
+    table.show_header = not compact
+    table.add_column("Domain", overflow="fold", ratio=1)
+    if not compact:
+        if show_category:
+            table.add_column("Category", style="dim")
+        table.add_column("Result", overflow="fold", width=20)
+        table.add_column("HTTP", justify="right", style="dim", no_wrap=True)
+        table.add_column("Latency", justify="right", style="dim", no_wrap=True)
+
     for result in report.results:
         if failed_only and summary_group(result.classification) != "failed":
             continue
-        table.add_row(
-            result.domain,
-            result.category,
-            _result_label(result.classification),
-            str(result.http_status) if result.http_status is not None else "-",
-            f"{result.latency_ms:.0f} ms",
-        )
+        domain = Text(result.domain)
+        if len(categories) > 1 and not show_category:
+            domain.append(f"\n{result.category}", style="dim")
+        label = _result_label(result.classification)
+        http = str(result.http_status) if result.http_status is not None else "-"
+        latency = f"{result.latency_ms:.0f} ms"
+        if compact:
+            domain.append("\n  ")
+            domain.append_text(label)
+            domain.append(f"\n  HTTP {http} / {latency}", style="dim")
+            table.add_row(domain)
+        else:
+            row = [domain]
+            if show_category:
+                row.append(Text(result.category))
+            table.add_row(*row, label, http, latency)
+
     if table.row_count:
+        console.print("Failed requests" if failed_only else "Domain results", style="bold")
         console.print(table)
     else:
-        console.print("No failed results to display.")
+        console.print("No failed results to display.", style="dim")
 
-    categories = Table(title="Category summary", box=box.ASCII)
-    categories.add_column("Category")
-    categories.add_column("Tested", justify="right")
-    categories.add_column("Accessible", justify="right", style="green")
-    categories.add_column("Failed", justify="right", style="red")
-    categories.add_column("Inconclusive", justify="right", style="yellow")
-    for category, summary in report.categories.items():
-        categories.add_row(
-            category,
-            str(summary.total),
-            str(summary.accessible),
-            str(summary.failed),
-            str(summary.inconclusive),
+    if len(categories) > 1:
+        _print_category_summary(console, report)
+
+    if any(result.classification is Classification.HTTP_RESTRICTED for result in report.results):
+        console.print(
+            "HTTP restricted indicates a denied request or an authentication requirement.",
+            style="dim",
         )
-    totals = report.summary
-    categories.add_row(
-        "Total",
-        str(totals.total),
-        str(totals.accessible),
-        str(totals.failed),
-        str(totals.inconclusive),
-        style="bold",
-    )
-    console.print(categories)
-    console.print(f"Checks completed {totals.total} | Elapsed {elapsed:.1f} s")
-    console.print(Text.assemble(("Report ", "bold"), str(path)))
-    console.print(" ".join(LIMITATIONS[:2]), style="dim")
+    console.print(LIMITATIONS[1], style="dim")
+
+
+def _print_category_summary(console: Console, report: ScanReport) -> None:
+    console.print("By category", style="bold")
+    table = _table()
+    table.add_column("Category", overflow="fold")
+    table.add_column("Accessible", justify="right", style="green")
+    table.add_column("Failed", justify="right", style="red")
+    table.add_column("Inconclusive", justify="right", style="yellow")
+    for category, summary in report.categories.items():
+        table.add_row(
+            category, str(summary.accessible), str(summary.failed), str(summary.inconclusive)
+        )
+    console.print(table)
 
 
 def print_categories(console: Console, entries: tuple[Domain, ...]) -> None:
     counts = Counter(entry.category for entry in entries)
-    table = Table(title="Dataset categories", box=box.ASCII)
-    table.add_column("Category", style="green")
+    console.print("Dataset categories", style="bold")
+    table = _table()
+    table.add_column("Category", style=_ACCENT)
     table.add_column("Service type")
     table.add_column("Hosts", justify="right")
     for category, label in CATEGORIES.items():
@@ -141,7 +200,8 @@ def print_comparison(console: Console, comparison: Comparison, before: str, afte
     console.print(Text.assemble(("Baseline ", "bold"), before))
     console.print(Text.assemble(("Compared ", "bold"), after))
     if comparison.changes:
-        table = Table(title="Accessibility differences", box=box.ASCII)
+        console.print("Accessibility differences", style="bold")
+        table = _table()
         table.add_column("Domain", overflow="fold")
         table.add_column("Before", overflow="fold")
         table.add_column("After", overflow="fold")
