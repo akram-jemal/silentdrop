@@ -12,7 +12,7 @@ from rich.table import Table
 from rich.text import Text
 
 from . import __version__
-from .classifier import summary_group
+from .classifier import CERTIFICATE_ERROR, summary_group
 from .comparison import Comparison
 from .dataset import CATEGORIES, DATASET_LICENSE, DATASET_VERSION, Domain
 from .models import Classification, ProbeResult
@@ -154,9 +154,26 @@ def print_scan_results(
     if len(categories) > 1:
         _print_category_summary(console, report)
 
+    certificate_failures = sum(
+        result.classification is Classification.TLS_ERROR and result.error == CERTIFICATE_ERROR
+        for result in report.results
+    )
+    if certificate_failures > 1:
+        console.print(
+            f"Certificate verification failed for {certificate_failures} of {totals.total} hosts.",
+            style="yellow",
+        )
+        console.print(
+            "Check the certificate store for the Python installation running SilentDrop. "
+            "For python.org builds on macOS, run Install Certificates.command from the "
+            "Python folder in Applications. On a managed network, ask IT which CA Python should trust.",
+            style="dim",
+        )
+
     if any(result.classification is Classification.HTTP_RESTRICTED for result in report.results):
         console.print(
-            "HTTP restricted indicates a denied request or an authentication requirement.",
+            "HTTP restricted means HTTPS worked and the endpoint denied the probe or required "
+            "authentication. Browsers can receive a different response.",
             style="dim",
         )
     console.print(LIMITATIONS[1], style="dim")

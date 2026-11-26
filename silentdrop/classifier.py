@@ -26,6 +26,8 @@ FAILED_CLASSIFICATIONS = frozenset(
     }
 )
 
+CERTIFICATE_ERROR = "TLS certificate verification failed."
+
 _NETWORK_FAILURES = {
     Failure.DNS: (
         Classification.DNS_FAILURE,
@@ -36,7 +38,7 @@ _NETWORK_FAILURES = {
         "The request timed out before receiving HTTP headers.",
     ),
     Failure.REFUSED: (Classification.CONNECTION_REFUSED, "The connection was refused."),
-    Failure.CERTIFICATE: (Classification.TLS_ERROR, "TLS certificate verification failed."),
+    Failure.CERTIFICATE: (Classification.TLS_ERROR, CERTIFICATE_ERROR),
     Failure.TLS: (Classification.TLS_ERROR, "TLS negotiation failed."),
     Failure.CONNECTION: (
         Classification.INCONCLUSIVE,

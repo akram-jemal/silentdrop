@@ -1,6 +1,7 @@
 import asyncio
 import io
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -8,6 +9,7 @@ from aiohttp import web
 from rich.console import Console
 
 from silentdrop import __version__, cli
+from silentdrop.classifier import CERTIFICATE_ERROR
 from silentdrop.dataset import DATASET_VERSION, Domain
 from silentdrop.models import Classification, Outcome, ProbeResult
 from silentdrop.reporter import ScanReport
@@ -94,7 +96,7 @@ async def test_scan_and_compare_reports_via_cli_with_loopback_https(
     assert await asyncio.to_thread(cli.main, [*args, "--format", "csv"]) == 0
     output = capsys.readouterr().out
     assert "HTTP restricted" in output
-    assert "denied request or an authentication requirement" in output
+    assert "HTTPS worked and the endpoint denied the probe" in output
     (after,) = (tmp_path / "reports").glob("silentdrop-*.csv")
 
     assert cli.main(["compare", str(before), str(after)]) == 0
@@ -138,3 +140,26 @@ def test_narrow_scan_results_keep_label_and_http_details_readable():
     assert "HTTP 403 / 199 ms" in rendered
     assert "\x1b" not in rendered
     assert max(map(len, rendered.splitlines())) <= 42
+
+
+def test_repeated_certificate_failures_show_python_trust_guidance():
+    first = ProbeResult(
+        domain="first.example",
+        category="social",
+        dns=Outcome.OK,
+        connection=Outcome.OK,
+        tls=Outcome.FAILED,
+        http_status=None,
+        latency_ms=200,
+        error=CERTIFICATE_ERROR,
+        timestamp="2026-11-26T12:00:00Z",
+        classification=Classification.TLS_ERROR,
+    )
+    second = replace(first, domain="second.example")
+    handshake = replace(first, domain="third.example", error="TLS negotiation failed.")
+    output = io.StringIO()
+    console = Console(file=output, width=80, color_system=None)
+    report = ScanReport(DATASET_VERSION, first.timestamp, (first, second, handshake))
+    print_scan_results(console, report, Path("reports/sample.json"), 0.2, failed_only=False)
+    assert "Certificate verification failed for 2 of 3 hosts" in output.getvalue()
+    assert "Install Certificates.command" in output.getvalue()
