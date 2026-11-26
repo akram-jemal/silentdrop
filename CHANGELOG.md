@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Add the SilentDrop wordmark and a terminal layout that adapts to narrow windows.
+- Explain repeated certificate verification failures and HTTP probe denials in scan output.
+- Add operating, report format and contribution guides.
+
 ## 1.0.0
 
 - Add the installable `silentdrop` CLI and the `python -m silentdrop` entry point.

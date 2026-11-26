@@ -6,6 +6,8 @@ Attribution-NonCommercial-ShareAlike 4.0 International license
 [legal code](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode)).
 The Python code is covered by the project's MIT license.
 
+## Source and coverage
+
 The primary source is *URL Testing Lists Intended for Discovering Website
 Censorship* (2014), by Citizen Lab and Others.
 [Upstream repository](https://github.com/citizenlab/test-lists)
@@ -17,8 +19,9 @@ uses revision `e6cba46f8774922e112b11524999584a3cefa15f`.
 · [Upstream license notice](https://github.com/citizenlab/test-lists/blob/e6cba46f8774922e112b11524999584a3cefa15f/README.md#license)
 · [Upstream category legend](https://github.com/citizenlab/test-lists/blob/e6cba46f8774922e112b11524999584a3cefa15f/lists/00-LEGEND-new_category_codes.csv)
 
-SilentDrop selected public hostnames for mainstream services, removed schemes,
-paths and duplicates, and assigned its own service categories. Rows marked
+The bundled list contains 129 public hostnames across ten categories. Of those,
+83 come from the upstream test lists. SilentDrop removed schemes, paths and
+duplicates from selected URLs, then assigned service categories. Rows marked
 `silentdrop` are independently selected additions. The review covers hostname
 selection for school-appropriate diagnostics. User-generated content on a
 service can change.
