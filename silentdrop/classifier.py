@@ -1,6 +1,7 @@
 """Interpret observed network and HTTP outcomes conservatively."""
 
 from enum import Enum
+from typing import Literal
 
 from .models import Classification
 
@@ -49,6 +50,17 @@ _RESTRICTIONS = {
     407: "The response requires proxy authentication (HTTP 407).",
     511: "The response indicates that network authentication is required (HTTP 511).",
 }
+
+
+def summary_group(
+    classification: Classification,
+) -> Literal["accessible", "failed", "inconclusive"]:
+    """Group detailed classifications for progress and report totals."""
+    if classification is Classification.ACCESSIBLE:
+        return "accessible"
+    if classification in FAILED_CLASSIFICATIONS:
+        return "failed"
+    return "inconclusive"
 
 
 def classify(
