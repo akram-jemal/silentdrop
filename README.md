@@ -19,7 +19,7 @@ optional browser check can verify whether a curated public clip actually plays.
 
 Use Python 3.10 or later. Clone the repository or extract the source ZIP, then
 open a terminal in the folder containing `pyproject.toml`.
-[Download main](https://github.com/akram-jemal/silentdrop/archive/refs/heads/main.zip) · [Releases](https://github.com/akram-jemal/silentdrop/releases)
+[Download v2.0.0 source](https://github.com/akram-jemal/silentdrop/archive/refs/tags/v2.0.0.zip) · [Release notes and packages](https://github.com/akram-jemal/silentdrop/releases/tag/v2.0.0)
 
 ```sh
 python3 -m venv .venv

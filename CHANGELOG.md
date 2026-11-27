@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0
 
 - Add an interactive terminal app for automatic public checks of 30 social,
   messaging, video, music, and gaming services.
@@ -11,7 +11,9 @@
 - Add scriptable `silentdrop list` and `silentdrop check` commands. Keep
   `silentdrop doctor` for local TLS and proxy diagnostics.
 - Retire the guided action workflow, the broad website scanner, and the
-  previous report and comparison commands.
+  previous report and comparison commands. Replace the legacy hostname CSV
+  with a curated service catalog. The earlier workflow remains available in
+  v1.1.0.
 
 ## 1.1.0
 
