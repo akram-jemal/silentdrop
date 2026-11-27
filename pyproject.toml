@@ -5,17 +5,20 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "silentdrop"
 dynamic = ["version"]
-description = "Asynchronous HTTPS connectivity diagnostics for a curated set of websites"
+description = "Public service access and playback checks for your current network"
 readme = "README.md"
 requires-python = ">=3.10"
-license = "MIT AND CC-BY-NC-SA-4.0"
-license-files = ["LICENSE", "silentdrop/data/ATTRIBUTION.md"]
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
     "aiohttp>=3.12.15,<4",
     "rich>=13.9,<16",
+    "textual>=8,<9",
+    "yarl>=1.20,<2",
 ]
 
 [project.optional-dependencies]
+playback = ["playwright>=1.50,<2"]
 dev = [
     "build>=1.2,<2",
     "pytest>=8.3,<10",
@@ -35,10 +38,7 @@ silentdrop = "silentdrop.cli:main"
 version = {attr = "silentdrop.__version__"}
 
 [tool.setuptools.packages.find]
-include = ["silentdrop", "silentdrop.data"]
-
-[tool.setuptools.package-data]
-"silentdrop.data" = ["*.csv", "*.md"]
+include = ["silentdrop"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "strict"

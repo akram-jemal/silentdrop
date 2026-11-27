@@ -5,6 +5,14 @@ from datetime import datetime, timezone
 from enum import Enum
 
 
+@dataclass(frozen=True)
+class Domain:
+    """Target for the doctor command's standalone HTTPS diagnostic."""
+
+    hostname: str
+    category: str
+
+
 class Outcome(str, Enum):
     OK = "ok"
     FAILED = "failed"

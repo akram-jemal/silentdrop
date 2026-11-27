@@ -10,12 +10,11 @@ from urllib.request import getproxies
 from rich.console import Console
 
 from .classifier import CERTIFICATE_ERROR
-from .dataset import Domain
-from .models import Outcome
+from .models import Domain, Outcome
 from .scanner import scan
 
 PROBE_HOST = "www.iana.org"
-_PROBE = Domain(PROBE_HOST, "general", "silentdrop")
+_PROBE = Domain(PROBE_HOST, "general")
 
 
 def _load_trust_context() -> ssl.SSLContext:

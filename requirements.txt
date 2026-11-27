@@ -1,2 +1,0 @@
-# Install runtime dependencies from the project metadata.
-.

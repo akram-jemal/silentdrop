@@ -12,7 +12,6 @@ import trustme
 from aiohttp import web
 
 from silentdrop import cli, doctor
-from silentdrop.dataset import load_dataset
 
 
 def test_doctor_defaults_to_offline_and_hides_environment_values(monkeypatch, tmp_path, capsys):
@@ -144,7 +143,6 @@ async def test_doctor_probe_reports_verified_http_response_without_following_red
     requests = []
     await https_server(reply)
 
-    assert doctor.PROBE_HOST in {entry.hostname for entry in load_dataset()}
     assert await asyncio.to_thread(cli.main, ["doctor", "--probe"]) == 0
 
     output = capsys.readouterr().out

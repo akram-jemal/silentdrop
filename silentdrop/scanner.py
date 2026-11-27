@@ -12,8 +12,7 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
 from .classifier import Failure, classify
-from .dataset import Domain
-from .models import Outcome, ProbeResult, utc_timestamp
+from .models import Domain, Outcome, ProbeResult, utc_timestamp
 
 if TYPE_CHECKING:
     import aiohttp

@@ -7,10 +7,9 @@ import pytest
 from aiohttp import web
 
 from silentdrop import scanner
-from silentdrop.dataset import Domain
-from silentdrop.models import Classification, Outcome, ProbeResult
+from silentdrop.models import Classification, Domain, Outcome, ProbeResult
 
-ENTRY = Domain("service.example", "gaming", "silentdrop")
+ENTRY = Domain("service.example", "gaming")
 
 
 @pytest.mark.asyncio

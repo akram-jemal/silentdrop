@@ -44,11 +44,9 @@ jobs:
           cd "$RUNNER_TEMP"
           "$smoke/bin/silentdrop" --help
           test "$("$smoke/bin/silentdrop" --version)" = "$("$smoke/bin/python" -m silentdrop --version)"
-          "$smoke/bin/silentdrop" categories
-          "$smoke/bin/silentdrop" dataset info
+          "$smoke/bin/silentdrop" list
+          "$smoke/bin/silentdrop" check --help
           "$smoke/bin/silentdrop" doctor
-          "$smoke/bin/silentdrop" compare \
-            "$GITHUB_WORKSPACE/examples/synthetic-home.json" "$GITHUB_WORKSPACE/examples/synthetic-lab.json"
 
   release:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')

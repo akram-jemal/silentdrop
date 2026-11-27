@@ -222,10 +222,8 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Local SilentDrop scan reports
+# Local reports from earlier SilentDrop versions
 reports/
-*.[jJ][sS][oO][nN]
-*.[cC][sS][vV]
-!/silentdrop/data/domains.csv
-!/examples/synthetic-*.json
-!/examples/synthetic-*.csv
+silentdrop-*.json
+silentdrop-*.csv
+app-check-*.json

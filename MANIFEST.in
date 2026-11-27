@@ -1,5 +1,4 @@
 include CHANGELOG.md CONTRIBUTING.md
 include .github/workflows/ci.yml
-include assets/silentdrop-logo.webp assets/terminal-demo.webp
-include examples/synthetic-home.json examples/synthetic-lab.json
+include assets/silentdrop-logo.webp
 recursive-include docs *.md

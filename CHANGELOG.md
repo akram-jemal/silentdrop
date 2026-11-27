@@ -2,9 +2,16 @@
 
 ## Unreleased
 
-- Add guided checks for 18 social and messaging apps, with plain results in
-  Regular mode and separate HTTPS diagnostics in Nerd mode.
-- Save the app action and user-observed outcome in a local JSON record.
+- Add an interactive terminal app for automatic public checks of 30 social,
+  messaging, video, music, and gaming services.
+- Search for a service or check the whole catalog, with plain-language results
+  in Regular mode and underlying evidence in Nerd mode.
+- Add optional Chromium playback checks of curated public clips on YouTube
+  and TikTok.
+- Add scriptable `silentdrop list` and `silentdrop check` commands. Keep
+  `silentdrop doctor` for local TLS and proxy diagnostics.
+- Retire the guided action workflow, the broad website scanner, and the
+  previous report and comparison commands.
 
 ## 1.1.0
 

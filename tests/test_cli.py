@@ -1,165 +1,114 @@
 import asyncio
-import io
-import json
 from dataclasses import replace
-from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
-from aiohttp import web
-from rich.console import Console
 
 from silentdrop import __version__, cli
-from silentdrop.classifier import CERTIFICATE_ERROR
-from silentdrop.dataset import DATASET_VERSION, Domain
-from silentdrop.models import Classification, Outcome, ProbeResult
-from silentdrop.reporter import ScanReport
-from silentdrop.ui import print_scan_results
+from silentdrop.catalog import SERVICE_BY_SLUG, SERVICES
+from silentdrop.results import Result, Verdict
 
 
-@pytest.mark.parametrize(
-    ("args", "error"),
-    [
-        (["scan", "--category", "unknown"], "invalid choice"),
-        (["scan", "--timeout", "nan"], "--timeout must be"),
-        (["scan", "--timeout", "0"], "--timeout must be"),
-        (["scan", "--concurrency", "33"], "--concurrency must be"),
-        (["scan", "--format", "xml"], "invalid choice"),
-        (["scan", "--output", "file.txt"], "use a .json or .csv report filename"),
-        (["scan", "--output", "file.csv", "--format", "json"], "--format must match"),
-        (["compare", "only-one.json"], "required"),
-        (["dataset"], "required"),
-    ],
-)
-def test_rejects_invalid_arguments(args, error, capsys, monkeypatch):
-    async def unexpected_scan(*args, **kwargs):
-        pytest.fail("invalid arguments reached the scanner")
-
-    monkeypatch.setattr(cli, "scan", unexpected_scan)
-    with pytest.raises(SystemExit) as exit_info:
-        cli.main(args)
-    assert exit_info.value.code == 2
-    assert error in capsys.readouterr().err
+def test_catalog_has_30_reviewed_public_services():
+    assert len(SERVICES) == len(SERVICE_BY_SLUG) == 30
+    assert {service.category for service in SERVICES} == {
+        "Social",
+        "Chat",
+        "Video",
+        "Music",
+        "Gaming",
+    }
+    for service in SERVICES:
+        for url in (service.url, service.video_url):
+            if url:
+                parsed = urlsplit(url)
+                assert parsed.scheme == "https" and parsed.hostname in service.hosts
+                assert parsed.username is None and parsed.password is None
 
 
-def test_help_version_categories_and_dataset_info(capsys):
-    assert cli.main([]) == 0
-    help_output = capsys.readouterr().out
-    assert "categories" in help_output and "compare" in help_output
-
-    with pytest.raises(SystemExit) as exit_info:
+def test_list_and_version_are_offline(capsys):
+    assert cli.main(["--no-color", "list"]) == 0
+    output = capsys.readouterr().out
+    assert "telegram-web" in output and "Public page" in output
+    assert "youtube" in output and "optional video playback" in output
+    with pytest.raises(SystemExit) as info:
         cli.main(["--version"])
-    assert exit_info.value.code == 0
+    assert info.value.code == 0
     assert capsys.readouterr().out == f"silentdrop {__version__}\n"
 
-    assert cli.main(["categories"]) == 0
-    categories = capsys.readouterr().out
-    assert "gaming" in categories and "Social media" in categories
 
-    assert cli.main(["dataset", "info"]) == 0
-    dataset = capsys.readouterr().out
-    assert DATASET_VERSION in dataset and "CC BY-NC-SA 4.0" in dataset
+def test_unknown_service_fails_before_network(capsys):
+    with pytest.raises(SystemExit) as info:
+        cli.main(["check", "arbitrary.example"])
+    assert info.value.code == 2
+    assert "Run silentdrop list" in capsys.readouterr().err
 
 
-def test_compare_reports_read_failure_is_actionable(capsys, tmp_path):
-    missing = tmp_path / "missing.json"
-    assert cli.main(["compare", str(missing), str(missing)]) == 1
-    assert "missing.json" in capsys.readouterr().err
+def test_check_modes_share_results_and_nerd_displays_details(capsys, monkeypatch):
+    from silentdrop import runner
+
+    async def checks(services, *, on_result):
+        result = Result(
+            services[0], Verdict.LOADED, "Public page loaded", ("HTTPS GET", "HTTP 200")
+        )
+        on_result(result)
+        return (result,)
+
+    monkeypatch.setattr(runner, "check_services", checks)
+    for mode in ("regular", "nerd"):
+        assert cli.main(["--no-color", "check", "telegram-web", "--mode", mode]) == 0
+        output = capsys.readouterr().out
+        assert "Telegram Web" in output and "Page loaded" in output
+        assert ("HTTP 200" in output) is (mode == "nerd")
 
 
 @pytest.mark.asyncio
-async def test_scan_and_compare_reports_via_cli_with_loopback_https(
-    https_server, capsys, tmp_path, monkeypatch
-):
-    monkeypatch.chdir(tmp_path)
-    entries = (
-        Domain("play.example", "gaming", "silentdrop"),
-        Domain("social.example", "social", "silentdrop"),
-    )
-    monkeypatch.setattr(cli, "load_dataset", lambda: entries)
-    statuses = iter((200, 403))
+async def test_batch_preserves_catalog_order_and_bounds_concurrent_page_checks(monkeypatch):
+    from silentdrop import runner
 
-    async def respond(request):
-        return web.Response(status=next(statuses))
+    batch = tuple(replace(service, video_url=None) for service in SERVICES)
+    active = peak = 0
+    completed = []
 
-    await https_server(respond)
+    async def page(service):
+        nonlocal active, peak
+        active += 1
+        peak = max(peak, active)
+        try:
+            await asyncio.sleep(0)
+            return Result(service, Verdict.LOADED, "Public page loaded", ())
+        finally:
+            active -= 1
 
-    before = tmp_path / "reports" / "before.json"
-    args = ["--no-color", "scan", "--category", "gaming", "--failed-only"]
-    assert await asyncio.to_thread(cli.main, [*args, "--output", str(before)]) == 0
-    output = capsys.readouterr().out
-    assert f"SilentDrop  v{__version__}" in output
-    assert "No failed results" in output
-    document = json.loads(before.read_text(encoding="utf-8"))
-    assert document["summary"]["total"] == document["summary"]["accessible"] == 1
-    assert [result["domain"] for result in document["results"]] == ["play.example"]
-
-    assert await asyncio.to_thread(cli.main, [*args, "--format", "csv"]) == 0
-    output = capsys.readouterr().out
-    assert "HTTP restricted" in output
-    assert "HTTPS worked and the endpoint denied the probe" in output
-    (after,) = (tmp_path / "reports").glob("silentdrop-*.csv")
-
-    assert cli.main(["compare", str(before), str(after)]) == 0
-    comparison = capsys.readouterr().out
-    assert "play.example" in comparison
-    assert "Changes 1 | Unchanged 0" in comparison
+    monkeypatch.setattr(runner, "check_page", page)
+    results = await runner.check_services(batch, on_result=completed.append)
+    assert 1 < peak <= 6
+    assert tuple(result.service for result in results) == batch
+    assert len(completed) == len(results) == 30
 
 
-def test_interrupted_scan_returns_130_and_leaves_no_report(monkeypatch, capsys, tmp_path):
-    def interrupt(coroutine):
-        coroutine.close()
-        raise KeyboardInterrupt
+@pytest.mark.asyncio
+@pytest.mark.parametrize("verdict", [Verdict.BLOCK_PAGE, Verdict.LOADED])
+async def test_playback_fallback_preserves_page_evidence(monkeypatch, verdict):
+    from silentdrop import runner
 
-    monkeypatch.setattr(cli.asyncio, "run", interrupt)
-    destination = tmp_path / "interrupted.json"
-    assert cli.main(["scan", "--output", str(destination)]) == 130
-    assert "Interrupted." in capsys.readouterr().err
-    assert not destination.exists()
+    service = SERVICE_BY_SLUG["youtube"]
+    probes = []
 
+    async def page(target):
+        return Result(target, verdict, verdict.value, ("Page evidence",))
 
-def test_narrow_scan_results_keep_label_and_http_details_readable():
-    result = ProbeResult(
-        domain="service.example",
-        category="social",
-        dns=Outcome.OK,
-        connection=Outcome.OK,
-        tls=Outcome.OK,
-        http_status=403,
-        latency_ms=199,
-        error=None,
-        timestamp="2026-11-26T12:00:00Z",
-        classification=Classification.HTTP_RESTRICTED,
-    )
-    output = io.StringIO()
-    console = Console(file=output, width=42, color_system=None)
-    report = ScanReport(DATASET_VERSION, result.timestamp, (result,))
-    print_scan_results(console, report, Path("reports/sample.json"), 0.2, failed_only=False)
-    rendered = output.getvalue()
-    assert "service.example" in rendered
-    assert "HTTP restricted" in rendered
-    assert "HTTP 403 / 199 ms" in rendered
-    assert "\x1b" not in rendered
-    assert max(map(len, rendered.splitlines())) <= 42
+    async def browser(target):
+        probes.append(target)
+        return Result(target, Verdict.UNVERIFIED, "Couldn't verify", ("Playback unavailable",))
 
-
-def test_repeated_certificate_failures_show_python_trust_guidance():
-    first = ProbeResult(
-        domain="first.example",
-        category="social",
-        dns=Outcome.OK,
-        connection=Outcome.OK,
-        tls=Outcome.FAILED,
-        http_status=None,
-        latency_ms=200,
-        error=CERTIFICATE_ERROR,
-        timestamp="2026-11-26T12:00:00Z",
-        classification=Classification.TLS_ERROR,
-    )
-    second = replace(first, domain="second.example")
-    handshake = replace(first, domain="third.example", error="TLS negotiation failed.")
-    output = io.StringIO()
-    console = Console(file=output, width=80, color_system=None)
-    report = ScanReport(DATASET_VERSION, first.timestamp, (first, second, handshake))
-    print_scan_results(console, report, Path("reports/sample.json"), 0.2, failed_only=False)
-    assert "Certificate verification failed for 2 of 3 hosts" in output.getvalue()
-    assert "Install Certificates.command" in output.getvalue()
+    monkeypatch.setattr(runner, "check_page", page)
+    monkeypatch.setattr(runner, "check_playback", browser)
+    (result,) = await runner.check_services((service,))
+    assert result.verdict is verdict
+    if verdict is Verdict.BLOCK_PAGE:
+        assert probes == []
+    else:
+        assert probes == [service]
+        assert result.summary == "Page loaded, playback unverified"
+        assert result.details == ("Page loaded", "Page evidence", "Playback unavailable")
