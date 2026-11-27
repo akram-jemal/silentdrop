@@ -3,6 +3,8 @@
 import csv
 import json
 from collections import Counter, defaultdict
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -113,6 +115,16 @@ def _write_csv(report: ScanReport, stream: TextIO) -> None:
 def save_report(report: ScanReport, path: Path) -> None:
     """Write a report atomically in the destination directory."""
     format_name = report_format(path)
+    with atomic_report(path) as stream:
+        if format_name == "json":
+            _write_json(report, stream)
+        else:
+            _write_csv(report, stream)
+
+
+@contextmanager
+def atomic_report(path: Path) -> Iterator[TextIO]:
+    """Write to a temporary file and replace the destination on success."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = None
     try:
@@ -126,10 +138,7 @@ def save_report(report: ScanReport, path: Path) -> None:
             delete=False,
         ) as stream:
             temporary_path = Path(stream.name)
-            if format_name == "json":
-                _write_json(report, stream)
-            else:
-                _write_csv(report, stream)
+            yield stream
         temporary_path.replace(path)
     finally:
         if temporary_path is not None:

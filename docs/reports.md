@@ -1,5 +1,18 @@
 # Report reference
 
+## App check records
+
+`silentdrop app` saves a separate JSON record under `reports/apps/`. It
+contains the app, the action, the outcome you entered, the UTC time, and an
+optional network label. Records have `report_type` set to `app_check` and
+`source` set to `user_observation`. In Nerd mode, `website_probe` contains
+the separate web check. In Regular mode that field is `null`.
+
+The existing `silentdrop compare` command takes the website scan reports
+described below.
+
+## Website scan reports
+
 SilentDrop writes reports to local files. Use `--output` to choose the path
 and file extension. Each successful scan writes one report for the selected
 dataset and category, even when the terminal displays only failed probes.

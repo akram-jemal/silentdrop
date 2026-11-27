@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import csv
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 from time import perf_counter
@@ -10,6 +11,7 @@ from time import perf_counter
 from rich.console import Console
 
 from . import __version__
+from .apps import MODES, run_app_check
 from .comparison import compare, load_report
 from .dataset import CATEGORIES, DATASET_VERSION, filter_category, load_dataset
 from .doctor import PROBE_HOST, run_doctor
@@ -37,11 +39,15 @@ def build_parser() -> argparse.ArgumentParser:
     """Define commands and options for both supported entry points."""
     parser = argparse.ArgumentParser(
         prog="silentdrop",
-        description="Check a reviewed set of websites using ordinary HTTPS requests.",
+        description="Check how apps work on your network or diagnose website reachability.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--no-color", action="store_true", help="disable color in terminal output")
     commands = parser.add_subparsers(dest="command", metavar="COMMAND")
+
+    app = commands.add_parser("app", help="guide a social or messaging app check")
+    app.add_argument("--mode", choices=MODES, help="choose Regular or Nerd mode directly")
+    app.set_defaults(handler=_run_app)
 
     scan_parser = commands.add_parser("scan", help="check websites and save a local report")
     scan_parser.add_argument("--category", choices=CATEGORIES, help="scan one category")
@@ -142,6 +148,13 @@ def _run_doctor(args: argparse.Namespace, console: Console) -> int:
     return run_doctor(console, probe=args.probe)
 
 
+def _run_app(args: argparse.Namespace, console: Console) -> None:
+    try:
+        run_app_check(console, args.mode)
+    except EOFError:
+        console.print("App check closed.", style="dim")
+
+
 def _compare_reports(args: argparse.Namespace, console: Console) -> None:
     before = load_report(args.before)
     after = load_report(args.after)
@@ -158,8 +171,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.command is None:
-        parser.print_help()
-        return 0
+        if not (sys.stdin.isatty() and sys.stdout.isatty()):
+            parser.print_help()
+            return 0
+        args.handler = _run_app
+        args.mode = None
 
     no_color = args.no_color or None
     console = Console(no_color=no_color, highlight=False)

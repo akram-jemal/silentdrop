@@ -12,6 +12,7 @@ Install SilentDrop and run a first scan from the [quick start](../README.md#quic
 
 | Command | Behavior |
 | --- | --- |
+| `silentdrop app` | Guides one app action and saves the outcome you observed. |
 | `silentdrop scan` | Probes all bundled hosts and saves one local report. |
 | `silentdrop doctor` | Checks the local Python runtime, TLS trust and detected proxy configuration offline. |
 | `silentdrop categories` | Lists category names and host counts offline. |
@@ -19,6 +20,28 @@ Install SilentDrop and run a first scan from the [quick start](../README.md#quic
 | `silentdrop compare BEFORE AFTER` | Compares two saved JSON or CSV reports offline. |
 | `silentdrop --version` | Prints the application version. |
 | `silentdrop --help` | Lists commands and global options. |
+
+## Check an app
+
+Run `silentdrop` in an interactive terminal or enter `silentdrop app`. Choose
+a numbered option for **Regular mode** or **Nerd mode**, then choose an app.
+The menu covers 18 services, including Telegram, WhatsApp, Discord, Instagram,
+TikTok, and YouTube.
+
+Follow the action shown in the app, such as sending a test message to an
+account you control or playing a video you haven't opened before. Return to the
+terminal and choose **Worked**, **Didn't work**, or **Couldn't check**. SilentDrop
+records the outcome you entered, the action, the time, and an optional network
+label. It saves the record as JSON in `reports/apps/`.
+
+- **Regular mode** shows the outcome in plain language and works offline.
+- **Nerd mode** adds an HTTPS HEAD check of one fixed public web endpoint for
+  the selected service. It shows DNS, TCP, TLS, HTTP status, latency, and any
+  diagnostic error. For Telegram, the endpoint is `web.telegram.org`.
+
+The result applies to the action you tried. The web probe describes its own
+endpoint and can succeed even if the app action failed. Firewall attribution
+requires separate evidence. Use Nerd mode where direct HTTPS checks are allowed.
 
 ## Check your setup
 

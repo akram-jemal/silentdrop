@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Add guided checks for 18 social and messaging apps, with plain results in
+  Regular mode and separate HTTPS diagnostics in Nerd mode.
+- Save the app action and user-observed outcome in a local JSON record.
+
 ## 1.1.0
 
 - Add `silentdrop doctor` to inspect local Python, TLS trust and proxy settings offline.

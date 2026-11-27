@@ -7,26 +7,31 @@
 [![CI](https://github.com/akram-jemal/silentdrop/actions/workflows/ci.yml/badge.svg)](https://github.com/akram-jemal/silentdrop/actions/workflows/ci.yml)
 [![MIT code license](https://img.shields.io/badge/code-MIT-green)](LICENSE)
 
-SilentDrop is a Python CLI for diagnosing website reachability from the network
-you're on. It probes a bundled set of public hostnames and records DNS,
-connection, TLS and HTTP outcomes. Use it to investigate a timeout,
-verify that an endpoint responded, or compare observations across networks.
+SilentDrop helps you check whether a specific app action works on the network
+you're on. Choose a social or messaging app, try the suggested action, and
+record what happened. Nerd mode adds a technical check of the service's web
+endpoint. Website scans are also available for broader diagnostics.
 
 ## Quick start
 
 Use Python 3.10 or later. Clone the repository or extract the source ZIP, then
-open a terminal in the folder containing `pyproject.toml`. [Download the v1.1.0 source](https://github.com/akram-jemal/silentdrop/archive/refs/tags/v1.1.0.zip)
+open a terminal in the folder containing `pyproject.toml`. The app menu is
+available from the latest source. [Download main](https://github.com/akram-jemal/silentdrop/archive/refs/heads/main.zip) · [Releases](https://github.com/akram-jemal/silentdrop/releases)
 
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install .
-silentdrop scan --category messaging
+silentdrop
 ```
 
 On Windows, create the environment with `py -m venv .venv` and activate it in
 PowerShell with `.\.venv\Scripts\Activate.ps1`. You can also invoke the CLI with
 `python -m silentdrop`.
+
+Choose **Regular mode** for a plain result or **Nerd mode** for an additional
+HTTPS check. Both guide you through the action in the real app and save the
+outcome you enter under `reports/apps/`. [App check guide](docs/usage.md#check-an-app)
 
 A scan saves a timestamped JSON report under `reports/` in the current working
 directory by default. Use SilentDrop where you are authorized to send direct
@@ -64,6 +69,8 @@ zoom.us                    Accessible              301     71 ms
 
 | Task | Command |
 | --- | --- |
+| Open the app check menu | `silentdrop app` |
+| Start an app check in Nerd mode | `silentdrop app --mode nerd` |
 | Inspect Python's TLS trust and detected proxy settings offline | `silentdrop doctor` |
 | Check direct HTTPS connectivity to one bundled hostname | `silentdrop doctor --probe` |
 | List category names and host counts | `silentdrop categories` |
